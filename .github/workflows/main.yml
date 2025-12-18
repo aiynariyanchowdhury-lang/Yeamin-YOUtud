@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Load CC System with Card Preview</title>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-green: #39ff14;
+            --neon-red: #ff3131;
+            --bg-dark: #0a0b10;
+            --panel-bg: #161b22;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: #e6edf3;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden; /* For scanning effect */
+        }
+        .panel.scanning::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
+            animation: scan 2s infinite linear;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        h2 { color: var(--neon-blue); font-size: 1.1rem; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; }
+
+        .input-box { margin-bottom: 15px; }
+        label { display: block; font-size: 0.75rem; color: #8b949e; margin-bottom: 5px; }
+        input, select, textarea {
+            width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #c9d1d9;
+            padding: 12px; box-sizing: border-box; outline: none;
+        }
+        input:focus { border-color: var(--neon-blue); box-shadow: 0 0 5px rgba(0, 210, 255, 0.3); }
+
+        .btn {
+            width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+            transition: 0.3s; margin-top: 10px; text-transform: uppercase;
+        }
+        .btn-gen { background: var(--neon-blue); color: #000; }
+        .btn-check { background: var(--neon-green); color: #000; }
+
+        /* Card Preview Styles */
+        .card-preview-container {
+            width: 320px;
+            height: 190px;
+            background: linear-gradient(135deg, #1c2a4f 0%, #00567e 100%); /* Deep blue gradient */
+            border-radius: 15px;
+            margin: 0 auto 30px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0, 86, 126, 0.4); /* Glow effect */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            font-family: 'Space Mono', monospace; /* More techy font */
+            border: 1px solid rgba(0, 210, 255, 0.3);
+        }
+        .card-preview-container::before {
+            content: '';
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 12px;
+        }
+        .card-logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.9);
+            position: absolute;
+            top: 15px; right: 20px;
+        }
+        .card-chip {
+            width: 45px;
+            height: 35px;
+            background: radial-gradient(circle, #ffd700, #b8860b);
+            border-radius: 5px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+            opacity: 0.9;
+        }
+        .card-number-display {
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .card-info-bottom {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            align-items: flex-end;
+        }
+        .card-holder-name { text-transform: uppercase; font-weight: bold; }
+        .card-expiry, .card-cvv { text-align: right; }
+        .card-expiry span, .card-cvv span { display: block; font-size: 0.65rem; color: #a5c7dd; }
+
+
+        .status-row {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #0d1117; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #30363d;
+        }
+        .stat-card small { display: block; font-size: 0.65rem; color: #8b949e; }
+        .stat-card b { font-size: 1.2rem; }
+
+        .progress-container {
+            width: 100%; height: 10px; background: #21262d; border-radius: 5px; margin: 20px 0; overflow: hidden;
+            display: none; border: 1px solid #30363d;
+        }
+        .progress-bar {
+            width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+            box-shadow: 0 0 10px var(--neon-blue); transition: width 0.3s;
+        }
+
+        #check-status { color: var(--neon-blue); text-align: center; font-size: 0.8rem; margin: 5px; }
+
+        .result-header {
+            display: flex; justify-content: space-between; align-items: center; margin: 15px 0 5px;
+        }
+        .copy-btn {
+            background: #30363d; color: white; border: none; padding: 5px 12px; border-radius: 4px;
+            font-size: 0.7rem; cursor: pointer;
+        }
+        .log-area {
+            height: 150px; overflow-y: auto; background: #000; border: 1px solid #30363d;
+            padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.8rem;
+        }
+        .live-hit { color: var(--neon-green); text-shadow: 0 0 5px rgba(57, 255, 20, 0.3); margin-bottom: 5px; }
+        .dead-hit { color: var(--neon-red); opacity: 0.7; margin-bottom: 5px; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card-preview-container">
+        <div class="card-logo" id="cardType">VISA</div> <div class="card-chip"></div>
+        <div class="card-number-display" id="displayCardNumber">XXXX XXXX XXXX XXXX</div>
+        <div class="card-info-bottom">
+            <div class="card-holder-name">VIRTUAL USER</div>
+            <div class="card-expiry">
+                <span>VALID THRU</span>
+                <span id="displayExpiry">MM/YY</span>
+            </div>
+            <div class="card-cvv">
+                <span>CVV</span>
+                <span id="displayCVV">***</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        
+        <div class="panel">
+            <h2>Card Generator System</h2>
+            <div class="input-box">
+                <label>INPUT BIN (First 6-12 Digits)</label>
+                <input type="text" id="bin" placeholder="453590xxxxxxxxxx" value="453590" maxlength="16" oninput="updateCardPreview()">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div class="input-box" style="flex:1">
+                    <label>MONTH</label>
+                    <select id="mon" onchange="updateCardPreview()">
+                        <option value="rnd">Random</option>
+                        <script>for(let i=1;i<=12;i++) document.write(`<option>${i<10?'0'+i:i}</option>`);</script>
+                    </select>
+                </div>
+                <div class="input-box" style="flex:1">
+                    <label>YEAR (MAX 2050)</label>
+                    <select id="year" onchange="updateCardPreview()">
+                        <option value="rnd">Random</option>
+                        <script>for(let i=2024;i<=2050;i++) document.write(`<option>${i}</option>`);</script>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-box">
+                <label>CVV (Optional)</label>
+                <input type="text" id="cvv" placeholder="Random" maxlength="4" oninput="updateCardPreview()">
+            </div>
+            
+            <div class="input-box">
+                <label>QUANTITY (Default 30)</label>
+                <input type="number" id="qty" value="30">
+            </div>
+
+            <button class="btn btn-gen" onclick="generate()">Generate List</button>
+            <textarea id="genList" style="height: 100px; margin-top: 15px;" placeholder="Generated items..."></textarea>
+        </div>
+
+        <div class="panel" id="checkerPanel">
+            <h2>Live Checker System</h2>
+            
+            <div class="status-row">
+                <div class="stat-card"><small>LIVE</small><b id="lCount" style="color:var(--neon-green)">0</b></div>
+                <div class="stat-card"><small>DEAD</small><b id="dCount" style="color:var(--neon-red)">0</b></div>
+                <div class="stat-card"><small>PROCESSED</small><b id="tCount">0</b></div>
+            </div>
+
+            <button class="btn btn-check" onclick="processChecker()">Start Deep Scan</button>
+            
+            <div id="check-status">Ready for inspection</div>
+            <div class="progress-container" id="pBarCont"><div class="progress-bar" id="pBar"></div></div>
+
+            <div class="result-header">
+                <span style="color:var(--neon-green)">LIVE HITS</span>
+                <button class="copy-btn" onclick="copyBox('liveBox')">COPY LIVE</button>
+            </div>
+            <div id="liveBox" class="log-area"></div>
+
+            <div class="result-header">
+                <span style="color:var(--neon-red)">DECLINED</span>
+                <button class="copy-btn" onclick="copyBox('deadBox')">COPY DEAD</button>
+            </div>
+            <div id="deadBox" class="log-area"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', updateCardPreview); // Load preview on start
+
+    function updateCardPreview() {
+        let bin = document.getElementById('bin').value.replace(/\s/g, ''); // Remove spaces
+        let month = document.getElementById('mon').value;
+        let year = document.getElementById('year').value;
+        let cvv = document.getElementById('cvv').value;
+
+        // Update Card Number
+        let formattedBin = bin.padEnd(16, 'X');
+        document.getElementById('displayCardNumber').innerText = formattedBin.match(/.{1,4}/g).join(' ');
+
+        // Update Expiry Date
+        let displayMonth = (month === 'rnd' || !month) ? 'MM' : month;
+        let displayYear = (year === 'rnd' || !year) ? 'YY' : year.toString().slice(-2);
+        document.getElementById('displayExpiry').innerText = `${displayMonth}/${displayYear}`;
+
+        // Update CVV
+        document.getElementById('displayCVV').innerText = (cvv || '***').padEnd(3, '*');
+
+        // Update Card Type (basic detection)
+        let cardType = "UNKNOWN";
+        if (bin.startsWith('4')) cardType = "VISA";
+        else if (bin.startsWith('5')) cardType = "MASTERCARD";
+        else if (bin.startsWith('34') || bin.startsWith('37')) cardType = "AMEX";
+        document.getElementById('cardType').innerText = cardType;
+    }
+
+    function generate() {
+        const bin = document.getElementById('bin').value || "453590";
+        const qty = parseInt(document.getElementById('qty').value);
+        let list = "";
+
+        for(let i=0; i<qty; i++) {
+            let n = bin.replace(/x/gi, () => Math.floor(Math.random()*10));
+            while(n.length < 15) n += Math.floor(Math.random()*10);
+            
+            // Luhn Algo
+            let sum = 0;
+            let isSecond = false;
+            for(let j=n.length-1; j>=0; j--) {
+                let d = parseInt(n[j]);
+                if(isSecond) { d*=2; if(d>9) d-=9; }
+                sum += d;
+                isSecond = !isSecond;
+            }
+            n += (10 - (sum % 10)) % 10;
+
+            let m = document.getElementById('mon').value === 'rnd' ? ("0"+(Math.floor(Math.random()*12)+1)).slice(-2) : document.getElementById('mon').value;
+            let y = document.getElementById('year').value === 'rnd' ? Math.floor(Math.random()*(2050-2024)+2024) : document.getElementById('year').value;
+            let c = document.getElementById('cvv').value || Math.floor(Math.random()*900)+100;
+            list += `${n}|${m}|${y}|${c}\n`;
+        }
+        document.getElementById('genList').value = list;
+    }
+
+    async function processChecker() {
+        const input = document.getElementById('genList').value.trim();
+        if(!input) return alert("Please generate cards first!");
+        
+        const cards = input.split('\n');
+        const pBar = document.getElementById('pBar');
+        const pBarCont = document.getElementById('pBarCont');
+        const panel = document.getElementById('checkerPanel');
+        
+        pBarCont.style.display = 'block';
+        panel.classList.add('scanning');
+        
+        let l = 0, d = 0;
+        document.getElementById('liveBox').innerHTML = "";
+        document.getElementById('deadBox').innerHTML = "";
+
+        for(let i=0; i<cards.length; i++) {
+            let currentCard = cards[i];
+            document.getElementById('check-status').innerText = `SCANNINING: ${currentCard.split('|')[0]}`;
+            
+            let percent = ((i + 1) / cards.length) * 100;
+            pBar.style.width = percent + "%";
+
+            await new Promise(r => setTimeout(r, 600));
+
+            if(Math.random() > 0.75) { 
+                l++;
+                document.getElementById('lCount').innerText = l;
+                document.getElementById('liveBox').innerHTML += `<div class="live-hit">✔ [LIVE] ${currentCard}</div>`;
+            } else {
+                d++;
+                document.getElementById('dCount').innerText = d;
+                document.getElementById('deadBox').innerHTML += `<div class="dead-hit">✖ [DEAD] ${currentCard}</div>`;
+            }
+            
+            document.getElementById('tCount').innerText = (i + 1);
+            document.getElementById('liveBox').scrollTop = document.getElementById('liveBox').scrollHeight;
+            document.getElementById('deadBox').scrollTop = document.getElementById('deadBox').scrollHeight;
+        }
+
+        panel.classList.remove('scanning');
+        document.getElementById('check-status').innerText = "SCAN COMPLETE";
+        pBarCont.style.display = 'none'; // Hide progress bar after completion
+    }
+
+    function copyBox(id) {
+        const area = document.getElementById(id);
+        const text = Array.from(area.querySelectorAll('div')).map(el => el.innerText).join('\n');
+        if(!text) return;
+        navigator.clipboard.writeText(text);
+        alert("Copied to clipboard!");
+    }
+</script>
+
+</body>
+</html>
